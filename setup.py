@@ -60,7 +60,9 @@ setup(
 
     # List run-time dependencies here. These will be installed by pip when your
     # project is installed.
-    install_requires = ['dataset', 'docopt', 'pathlib', 'arrow'],
+    install_requires = [
+        'gtimelog', 'dataset', 'docopt', 'pathlib', 'arrow',
+    ],
 
     # If there are data files included in your packages that need to be
     # installed, specify them here. If using Python 2.6 or less, then these

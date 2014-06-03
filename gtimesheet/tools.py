@@ -2,6 +2,7 @@
 
 Usage:
   gtimesheet [--dry-run] <timesheet> <timelog>
+  gtimesheet send-reports [--dry-run] <timesheet> <timelog>
   gtimesheet (-h | --help)
   gtimesheet --version
 
@@ -21,6 +22,7 @@ from pathlib import Path
 from .sync import sync
 from .sync import sync_to_timesheet
 from .timelog import timesheets_to_timelog
+from .mailer import send_reports
 
 
 def gtimesheet():
@@ -34,7 +36,10 @@ def gtimesheet():
     entries = sync(db, args['<timelog>'])
     entries = sync_to_timesheet(db, entries)
 
-    if args['--dry-run']:
+    if args['--dry-run'] and args['send-reports']:
+        entries = (entry for source, entry in entries)
+        send_reports(args['<timelog>'], entries)
+    elif args['--dry-run']:
         for source, entry in entries:
             notes = ': '.join(filter(None, [entry[k] for k in keys]))
             print u'{source:>9}: {date1} -- {date2}: {notes_}'.format(
