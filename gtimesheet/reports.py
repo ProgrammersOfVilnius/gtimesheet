@@ -38,7 +38,7 @@ Weekly report test.
     >>> print reports.weekly('2014/13') # doctest: +ELLIPSIS
     To: me@example.com
     ...
-    Total work done this week: 3 hours 3 min
+    Total work done this week: 3:03
     ...
     <BLANKLINE>
 
@@ -49,7 +49,7 @@ Monthly report test.
     >>> print reports.monthly('2014-03') # doctest: +ELLIPSIS
     To: me@example.com
     ...
-    Total work done this month: 7 hours 2 min
+    Total work done this month: 7:02
     ...
     <BLANKLINE>
 
@@ -94,15 +94,16 @@ class ReportsFacade(object):
         return self.report('daily_report', window)
 
     def weekly(self, week):
-        day = datetime.datetime.strptime('%s/1' % week, '%Y/%W/%w')
+        day = (datetime.datetime.strptime('%s/1' % week, '%Y/%W/%w') -
+               datetime.timedelta(days=7))
         day = datetime.datetime.combine(day, self.virtual_midnight)
         day = arrow.get(day)
         window = self.window(day.naive, day.replace(weeks=+1).naive)
-        return self.report('weekly_report_plain', window)
+        return self.report('weekly_report_categorized', window)
 
     def monthly(self, month):
         day = datetime.datetime.strptime(month, '%Y-%m')
         day = datetime.datetime.combine(day, self.virtual_midnight)
         day = arrow.get(day)
         window = self.window(day.naive, day.replace(months=+1).naive)
-        return self.report('monthly_report_plain', window)
+        return self.report('monthly_report_categorized', window)

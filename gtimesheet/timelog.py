@@ -1,5 +1,9 @@
+import os
 import datetime
 import string
+
+from contextlib import contextmanager
+from tempfile import NamedTemporaryFile
 
 
 def read_timelog(f, midnight='06:00'):
@@ -289,14 +293,14 @@ def timesheets_to_timelog(timesheets, midnight='06:00'):
      '2014-04-01 18:00: client: project: a task']
 
     """
+    fmt = '%Y-%m-%d %H:%M'
     last = None
     nextday = None
     day = datetime.timedelta(days=1)
     hour, minute = map(int, midnight.split(':'))
     midnight = dict(hour=hour, minute=minute)
-    keys = ('clientName', 'projectName', 'notes')
     for ts in timesheets:
-        time = datetime.datetime.strptime(ts['date1'], '%Y-%m-%d %H:%M')
+        time = datetime.datetime.strptime(ts['date1'], fmt)
 
         if nextday is not None and time >= nextday:
             yield ''
@@ -307,13 +311,33 @@ def timesheets_to_timelog(timesheets, midnight='06:00'):
             if time >= nextday:
                 nextday += day
 
-        notes = ': '.join(filter(None, [ts[k] for k in keys]))
+        notes = ts['notes'] if ts['notes'] else '(empty note)'
+        if ts['projectName']:
+            notes = '%s: %s' % (ts['projectName'], notes)
+        else:
+            notes = '%s' % notes
 
         if last is None:
             yield '%s: start' % ts['date1']
         elif last != ts['date1']:
-            yield '%s: slack ***' % ts['date1']
+            yield '%s: break ***' % ts['date1']
 
-        yield '%s: %s' % (ts['date2'], notes)
+        if ts['breaks']:
+            date2 = datetime.datetime.strptime(ts['date2'], fmt)
+            date2 -= datetime.timedelta(minutes=ts['breaks'])
+            date2 = date2.strftime(fmt)
+        else:
+            date2 = ts['date2']
+        yield '%s: %s' % (date2, notes)
 
         last = ts['date2']
+
+
+@contextmanager
+def timelog_file(entries):
+    f = NamedTemporaryFile(delete=False)
+    for line in timesheets_to_timelog(entries):
+        f.write(line.encode('utf-8') + '\n')
+    f.close()
+    yield f.name
+    os.unlink(f.name)
