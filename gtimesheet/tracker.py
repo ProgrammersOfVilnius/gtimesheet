@@ -1,6 +1,8 @@
 import arrow
 import datetime
 
+from pathlib import Path
+
 from .constants import VIRTUAL_MIDNIGHT
 
 
@@ -9,7 +11,8 @@ def woty(d):
     return d.isocalendar()[1]
 
 
-def schedule(entries, virtual_midnight=VIRTUAL_MIDNIGHT, now=None):
+def schedule(entries, replog=None, virtual_midnight=VIRTUAL_MIDNIGHT,
+             now=None):
     """Generates reports shedule.
 
     Setup tests.
@@ -49,17 +52,19 @@ def schedule(entries, virtual_midnight=VIRTUAL_MIDNIGHT, now=None):
 
     One day from previous month.
 
+        >>> from StringIO import StringIO
+        >>> replog = ReportsLog(log=StringIO(), now=now)
         >>> entries = [
         ...     {'date1': '2014-02-03 01:01'},
         ... ]
-        >>> pp(list(schedule(entries, now=now)))
+        >>> pp(list(schedule(entries, replog, now=now)))
         ... # doctest: +NORMALIZE_WHITESPACE
         [('daily', '2014-02-02'), ('weekly', '2014/05'),
          ('monthly', '2014-02')]
 
     """
-    reports = set()
     now = now or datetime.datetime.now()
+    replog = replog or ReportsLog(now=now)
     now = arrow.get(now).floor('day').naive
     now_week = '%d/%02d' % (now.year, woty(now))
     now_month = now.strftime('%Y-%m')
@@ -67,7 +72,7 @@ def schedule(entries, virtual_midnight=VIRTUAL_MIDNIGHT, now=None):
 
     can_yield = lambda last, current, now: (
         last is not None and last != current and
-        last not in reports and now > last
+        last not in replog and now > last
     )
 
     for entry in entries:
@@ -80,23 +85,70 @@ def schedule(entries, virtual_midnight=VIRTUAL_MIDNIGHT, now=None):
 
         week = '%d/%02d' % (day.year, woty(day))
         if can_yield(last_week, week, now_week):
-            yield 'weekly', last_week
-            reports.add(last_week)
+            yield replog.add('weekly', last_week)
         last_week = week
 
         month = day.strftime('%Y-%m')
         if can_yield(last_month, month, now_month):
-            yield 'monthly', last_month
-            reports.add(last_month)
+            yield replog.add('monthly', last_month)
         last_month = month
 
-        if day not in reports and now > day:
-            yield 'daily', day.strftime('%Y-%m-%d')
-            reports.add(day)
+        f_day = day.strftime('%Y-%m-%d')
+        if f_day not in replog and now > day:
+            yield replog.add('daily', f_day)
 
 
     if can_yield(last_week, None, now_week):
-        yield 'weekly', last_week
+        yield replog.add('weekly', last_week)
 
     if can_yield(last_month, None, now_month):
-        yield 'monthly', last_month
+        yield replog.add('monthly', last_month)
+
+
+def read_sent_reports(f):
+    """Read sent reports log file and retur set of sent reports.
+
+        >>> from StringIO import StringIO
+        >>> sentreports = StringIO('''
+        ... 2014-06-04 15:18:59,monthly,2014-05
+        ... ''')
+
+        >>> read_sent_reports(sentreports)
+        set(['2014-05'])
+
+    """
+    reports = set()
+    for line in f:
+        line = line.strip()
+        if line:
+            created, report, date = line.strip().split(',')
+            reports.add(date)
+    return reports
+
+
+def get_sent_reports(filename):
+    path = Path(filename)
+    if path.exists():
+        with path.open() as f:
+            return read_sent_reports(f)
+    else:
+        return set()
+
+
+class ReportsLog(object):
+    def __init__(self, dates=None, log=None, now=None):
+        self.dates = dates or set()
+        self.log = log
+        self.now = now or datetime.datetime.now()
+        self.now = self.now.strftime('%Y-%m-%d %H:%M:%S')
+
+    def __contains__(self, date):
+        return date in self.dates
+
+    def add(self, report, date):
+        self.dates.add(date)
+        return report, date
+
+    def write(self, report, date):
+        if self.log is not None:
+            self.log.write('%s,%s,%s\n' % (self.now, report, date))
