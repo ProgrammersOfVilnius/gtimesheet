@@ -1,25 +1,37 @@
 """Timesheet and gTimeLog synchronisation tool.
 
 Usage:
-  gtimesheet [--dry-run] <timesheet> <timelog>
-  gtimesheet send-reports [--dry-run] [--fake] --sent-reports=<filename> <timesheet> <timelog>
-  gtimesheet stats <timesheet> <timelog>
-  gtimesheet overtime [--holidays=<filename>...] <ratio> <timesheet> <timelog>
+  gtimesheet [--config=<filename>] [--dry-run] [--timesheet=<filename>]
+             [--timelog=<filename>]
+  gtimesheet send [--config=<filename>] [--dry-run] [--fake]
+             [--sent-reports=<filename>] [--timesheet=<filename>]
+             [--timelog=<filename>]
+  gtimesheet stats [--config=<filename>] [--timesheet=<filename>]
+             [--timelog=<filename>]
+  gtimesheet overtime [--config=<filename>] [--holidays=<filename>...]
+             [--work-hours=<hrs-per-day>] [--timesheet=<filename>]
+             [--timelog=<filename>]
   gtimesheet (-h | --help)
   gtimesheet --version
 
 Options:
   -h --help     Show this screen.
   --version     Show version.
+  -c <filename> --config=<filename>
+                Configuration file. [default: ~/.gtimelog/gtimelogrc]
   --dry-run     Just show what will be done without doing anything.
+  --fake        Fill sent reports state file, without sending any report.
   --holidays=<filename...>
-                Specify configuration file for holidays.
-  --fake        Fill sent reports state file, withoud sending any report.
+                Configuration files for holidays. You can use this parameter
+                more than once to include more holiday files.
   --sent-reports=<filename>
                 Sent reports log file.
-  <ratio>       Hourse per day with given total hours per day, example: 3.5/7
-  <timesheet>   Timesheet Sqlite3 database file 
-  <timelog>     gTimeLog timelog.txt file.
+  --timesheet=<filename>
+                Timesheet Sqlite3 database file 
+  --timelog=<filename>
+                gTimeLog timelog.txt file.
+  --work-hours=<hrs-per-day>
+                Hours per day with given total hours per day, example: 3.5/7
 
 """
 
@@ -43,6 +55,7 @@ from .utils import format_timedelta
 from .utils import open_files
 from .tracker import get_sent_reports
 from .tracker import ReportsLog
+from .settings import Settings
 
 
 @contextmanager
@@ -56,11 +69,9 @@ def _replog(args):
 
 def gtimesheet():
     args = docopt(__doc__, version=__version__)
+    cfg = Settings(args)
 
-    path = Path(args['<timesheet>'])
-    db = dataset.connect('sqlite:///%s' % path.resolve())
-
-    keys = ('clientName', 'projectName', 'notes')
+    db = dataset.connect('sqlite:///%s' % cfg.timesheet.resolve())
 
     entries = sync(db, args['<timelog>'])
     entries = sync_to_timesheet(db, entries)
@@ -87,6 +98,7 @@ def gtimesheet():
         print format_timedelta(overtime, timedelta(hours=h_total))
 
     elif args['--dry-run']:
+        keys = ('clientName', 'projectName', 'notes')
         for source, entry in entries:
             notes = ': '.join(filter(None, [entry[k] for k in keys]))
             print u'{source:>9}: {date1} -- {date2}: {notes_}'.format(
