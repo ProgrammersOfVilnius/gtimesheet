@@ -5,7 +5,8 @@ Usage:
              [--timelog=<filename>]
   gtimesheet send [--config=<filename>] [--dry-run] [--fake]
              [--sent-reports=<filename>] [--timesheet=<filename>]
-             [--timelog=<filename>]
+             [--timelog=<filename>] [--email=<email>] [--name=<name>]
+             [--from-email=<email>]
   gtimesheet stats [--config=<filename>] [--timesheet=<filename>]
              [--timelog=<filename>]
   gtimesheet overtime [--config=<filename>] [--holidays=<filename>...]
@@ -35,11 +36,11 @@ Options:
 
 """
 
+import datetime
 import dataset
 
 from docopt import docopt
 from gtimesheet import __version__
-from pathlib import Path
 from datetime import timedelta
 from contextlib import contextmanager
 
@@ -52,6 +53,7 @@ from .stats import stats_by_day
 from .stats import get_overtime
 from .holidays import Holidays
 from .utils import format_timedelta
+from .utils import format_hours
 from .utils import open_files
 from .tracker import get_sent_reports
 from .tracker import ReportsLog
@@ -59,9 +61,9 @@ from .settings import Settings
 
 
 @contextmanager
-def _replog(args):
-    if not args['--dry-run'] and args['--sent-reports']:
-        with open(args['--sent-reports'], 'a') as f:
+def _replog(cfg):
+    if not cfg.dry_run and cfg.sent_reports:
+        with cfg.sent_reports.open('a') as f:
             yield f
     else:
         yield None
@@ -69,40 +71,67 @@ def _replog(args):
 
 def gtimesheet():
     args = docopt(__doc__, version=__version__)
-    cfg = Settings(args)
+    cfg = Settings()
+    cfg.load(args)
 
-    db = dataset.connect('sqlite:///%s' % cfg.timesheet.resolve())
+    db = dataset.connect('sqlite:///%s' % cfg.timesheet)
 
-    entries = sync(db, args['<timelog>'])
+    entries = sync(db, str(cfg.timelog))
     entries = sync_to_timesheet(db, entries)
 
-    if args['send-reports']:
+    if args['send']:
         entries = [entry for source, entry in entries]
-        reports = get_sent_reports(args['--sent-reports'])
-        with timelog_file(entries) as filename, _replog(args) as log:
+        reports = get_sent_reports(cfg.sent_reports)
+        with timelog_file(entries) as filename, _replog(cfg) as log:
             replog = ReportsLog(reports, log)
-            dontsend = args['--fake'] or args['--dry-run']
-            send_reports(filename, entries, replog, dontsend)
+            dontsend = cfg.fake or cfg.dry_run
+            send_reports(cfg, filename, entries, replog, dontsend)
 
     elif args['stats']:
+        with open_files(cfg.holidays) as files:
+            holidays = Holidays(files)
         entries = (entry for source, entry in entries)
+        overtime = datetime.timedelta()
+        perday = cfg.part_time
         for date, time in stats_by_day(entries):
-            print '%s: %8s' % (date.strftime('%Y-%m-%d'), str(time))
+            if holidays.is_holiday(date):
+                holiday = '(holiday)'
+                overtime += time
+            else:
+                holiday = ''
+                if time > perday:
+                    overtime += time - perday
+                else:
+                    overtime -= perday - time
+
+            print '%s: %8s [%8s] %s' % (
+                date.strftime('%Y-%m-%d'), str(time), format_hours(overtime),
+                holiday
+            )
 
     elif args['overtime']:
-        with open_files(args['--holidays']) as files:
+        with open_files(cfg.holidays) as files:
             holidays = Holidays(files)
-        h_perday, h_total = map(float, args['<ratio>'].split('/'))
+        h_total = cfg.hours
+        h_perday = cfg.part_time
         entries = [entry for source, entry in entries]
-        overtime = get_overtime(entries, h_perday, holidays)
-        print format_timedelta(overtime, timedelta(hours=h_total))
+        totaltime, worktime, overtime = get_overtime(entries, h_perday, holidays)
+        print
+        print 'Work time:     %8s' % format_hours(worktime)
+        print 'Total time:    %8s' % format_hours(totaltime)
+        print 'Overtime:      %8s' % format_hours(overtime)
+        print
+        print 'Overtime in fulltime working days (%s h/day):' % h_total
+        print '  %s' % format_timedelta(overtime, timedelta(hours=h_total))
 
-    elif args['--dry-run']:
+    elif cfg.dry_run:
+        spt = lambda o: datetime.datetime.strptime(o, '%Y-%m-%d %H:%M')
         keys = ('clientName', 'projectName', 'notes')
         for source, entry in entries:
+            delta = spt(entry['date2']) - spt(entry['date1'])
             notes = ': '.join(filter(None, [entry[k] for k in keys]))
-            print u'{source:>9}: {date1} -- {date2}: {notes_}'.format(
-                source=source, notes_=notes, **entry
+            print u'{source:>9}: {date1} -- {date2} ({delta:>8}): {notes_}'.format(
+                source=source, notes_=notes, delta=delta, **entry
             )
 
     else:

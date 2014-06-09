@@ -151,4 +151,4 @@ class ReportsLog(object):
 
     def write(self, report, date):
         if self.log is not None:
-            self.log.write('%s,%s,%s\n' % (self.now, report, date))
+            self.log.write(u'%s,%s,%s\n' % (self.now, report, date))

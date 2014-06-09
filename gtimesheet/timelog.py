@@ -7,7 +7,7 @@ from tempfile import NamedTemporaryFile
 
 
 def read_timelog(f, midnight='06:00'):
-    """
+    r"""
 
     >>> from pprint import pprint as pp
     >>> from StringIO import StringIO
@@ -29,14 +29,21 @@ def read_timelog(f, midnight='06:00'):
     ... 2014-03-24 18:14: project: t1
     ... ''')
     >>> pp(list(read_timelog(f)))
-    []
+    [{'date1': datetime.datetime(2014, 3, 24, 18, 14),
+      'date2': datetime.datetime(2014, 3, 24, 18, 14),
+      'notes': 'project: t1'}]
 
     >>> f = StringIO('''
     ... 2014-03-24 18:14: project: t1
     ... 2014-03-25 18:14: project: t1
     ... ''')
     >>> pp(list(read_timelog(f)))
-    []
+    [{'date1': datetime.datetime(2014, 3, 24, 18, 14),
+      'date2': datetime.datetime(2014, 3, 24, 18, 14),
+      'notes': 'project: t1'},
+     {'date1': datetime.datetime(2014, 3, 25, 18, 14),
+      'date2': datetime.datetime(2014, 3, 25, 18, 14),
+      'notes': 'project: t1'}]
 
     >>> f = StringIO('''
     ... 2014-03-24 18:14: project: t1
@@ -44,7 +51,10 @@ def read_timelog(f, midnight='06:00'):
     ... 2014-03-25 18:14: project: t1
     ... ''')
     >>> pp(list(read_timelog(f)))
-    [{'date1': datetime.datetime(2014, 3, 25, 17, 14),
+    [{'date1': datetime.datetime(2014, 3, 24, 18, 14),
+      'date2': datetime.datetime(2014, 3, 24, 18, 14),
+      'notes': 'project: t1'},
+     {'date1': datetime.datetime(2014, 3, 25, 17, 14),
       'date2': datetime.datetime(2014, 3, 25, 18, 14),
       'notes': 'project: t1'}]
 
@@ -67,6 +77,9 @@ def read_timelog(f, midnight='06:00'):
     [{'date1': datetime.datetime(2014, 3, 24, 14, 15),
       'date2': datetime.datetime(2014, 3, 24, 18, 14),
       'notes': 'project: t1'},
+     {'date1': datetime.datetime(2014, 3, 25, 9, 40),
+      'date2': datetime.datetime(2014, 3, 25, 9, 40),
+      'notes': 'start'},
      {'date1': datetime.datetime(2014, 3, 31, 15, 48),
       'date2': datetime.datetime(2014, 3, 31, 17, 10),
       'notes': 'project: t2'},
@@ -86,12 +99,47 @@ def read_timelog(f, midnight='06:00'):
       'date2': datetime.datetime(2014, 4, 16, 18, 47),
       'notes': 'project: t5'}]
 
+
+    >>> def print_timelog(entries):
+    ...     for entry in entries:
+    ...         print '{date1} -- {date2}: {notes}'.format(**entry)
+    >>> f = StringIO('''
+    ... 2014-03-17 12:00: first day.
+    ... 
+    ... 2014-03-24 14:15: start
+    ... 2014-03-24 18:14: p1: t1
+    ... 
+    ... 2014-03-25 09:40: start
+    ... 
+    ... 2014-03-31 15:48: start
+    ... 2014-03-31 17:10: p2: t1
+    ... 2014-03-31 17:38: p2: t2
+    ... 2014-03-31 18:51: p2: t3
+    ... 
+    ... 2014-04-01 13:54: start
+    ... 2014-04-01 15:41: p2: t4
+    ... 2014-04-01 16:04: tea **
+    ... 2014-04-01 18:00: p2: t5
+    ... ''')
+    >>> print_timelog(read_timelog(f))
+    2014-03-17 12:00:00 -- 2014-03-17 12:00:00: first day.
+    2014-03-24 14:15:00 -- 2014-03-24 18:14:00: p1: t1
+    2014-03-25 09:40:00 -- 2014-03-25 09:40:00: start
+    2014-03-31 15:48:00 -- 2014-03-31 17:10:00: p2: t1
+    2014-03-31 17:10:00 -- 2014-03-31 17:38:00: p2: t2
+    2014-03-31 17:38:00 -- 2014-03-31 18:51:00: p2: t3
+    2014-04-01 13:54:00 -- 2014-04-01 15:41:00: p2: t4
+    2014-04-01 15:41:00 -- 2014-04-01 16:04:00: tea **
+    2014-04-01 16:04:00 -- 2014-04-01 18:00:00: p2: t5
+
     """
     last = None
     nextday = None
     hour, minute = map(int, midnight.split(':'))
     midnight = dict(hour=hour, minute=minute)
     day = datetime.timedelta(days=1)
+    entries = 0
+    last_note = None
     for line in f:
         line = line.strip()
         if line == '': continue
@@ -100,7 +148,15 @@ def read_timelog(f, midnight='06:00'):
         time = datetime.datetime.strptime(time, '%Y-%m-%d %H:%M')
 
         if nextday is None or time >= nextday:
+            if last is not None and entries == 0:
+                yield {
+                    'date1': last,
+                    'date2': last,
+                    'notes': last_note,
+                }
+            entries = 0
             last = time
+            last_note = note
             nextday = time.replace(**midnight)
             if time >= nextday:
                 nextday += day
@@ -112,7 +168,16 @@ def read_timelog(f, midnight='06:00'):
             'notes': note,
         }
 
+        entries += 1
         last = time
+        last_note = note
+
+    if last is not None and entries == 0:
+        yield {
+            'date1': last,
+            'date2': last,
+            'notes': last_note,
+        }
 
 
 def resolvekw(key, mapping, default=KeyError):
@@ -233,6 +298,19 @@ def timesheets_to_timelog(timesheets, midnight='06:00'):
     ...      'amountperhour': 0.0,
     ...      'breaks': 0,
     ...      'clientName': '',
+    ...      'date1': '2014-03-21 15:00',
+    ...      'date2': '2014-03-21 15:00',
+    ...      'methodid': 0,
+    ...      'notes': 'first day',
+    ...      'overtime': 0,
+    ...      'project': '0',
+    ...      'projectName': '',
+    ...      'status': 0,
+    ...      'working': 0},
+    ...     {'amount': 0.0,
+    ...      'amountperhour': 0.0,
+    ...      'breaks': 0,
+    ...      'clientName': '',
     ...      'date1': '2014-03-31 15:48',
     ...      'date2': '2014-03-31 17:10',
     ...      'methodid': 0,
@@ -283,14 +361,16 @@ def timesheets_to_timelog(timesheets, midnight='06:00'):
     ...      'working': 82},
     ... ]
     >>> pp(list(timesheets_to_timelog(timesheets)))
-    ['2014-03-31 15:48: start',
+    ['2014-03-21 15:00: first day',
+     '',
+     '2014-03-31 15:48: start',
      '2014-03-31 17:10: project: t2',
      '2014-03-31 18:10: project: t2',
      '',
      '2014-04-01 09:00: start',
      '2014-04-01 12:50: project: t2',
-     '2014-04-01 14:30: slack ***',
-     '2014-04-01 18:00: client: project: a task']
+     '2014-04-01 14:30: break ***',
+     '2014-04-01 18:00: project: a task']
 
     """
     fmt = '%Y-%m-%d %H:%M'
@@ -317,7 +397,9 @@ def timesheets_to_timelog(timesheets, midnight='06:00'):
         else:
             notes = '%s' % notes
 
-        if last is None:
+        if last is None and ts['date1'] == ts['date2']:
+            pass
+        elif last is None:
             yield '%s: start' % ts['date1']
         elif last != ts['date1']:
             yield '%s: break ***' % ts['date1']

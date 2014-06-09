@@ -1,6 +1,7 @@
 import gettext
 import codecs
 
+from pathlib import Path
 from contextlib import contextmanager
 from datetime import timedelta
 
@@ -25,11 +26,10 @@ def format_timedelta(delta, perday=timedelta(hours=24)):
         '+ 1 day 1:00:00'
 
     """
-
-    delta = delta.total_seconds()
     perday = perday.total_seconds()
-    sign = '-' if delta < 0 else '+'
+    sign = '-' if delta < timedelta() else '+'
     delta = abs(delta)
+    delta = delta.total_seconds()
     days = delta // perday
     reminder = timedelta(seconds=(delta - perday*days))
     if days > 0:
@@ -37,6 +37,40 @@ def format_timedelta(delta, perday=timedelta(hours=24)):
         return '%s %d %s %s' % (sign, days, days_text, reminder)
     else:
         return '%s %s' % (sign, reminder)
+
+
+def format_hours(delta):
+    """
+
+        >>> print format_hours(timedelta(days=1))
+        24:00
+
+        >>> print format_hours(timedelta(days=1, minutes=30))
+        24:30
+
+        >>> print format_hours(timedelta(days=1, minutes=30, seconds=5))
+        24:30
+
+        >>> print format_hours(timedelta(seconds=200))
+        0:03
+
+        >>> print format_hours(timedelta(days=10))
+        240:00
+
+        >>> print format_hours(-timedelta(hours=1, minutes=10))
+        -1:10
+
+    """
+    if delta >= timedelta():
+        sign = ''
+    else:
+        sign = '-'
+        delta = abs(delta)
+    delta = delta.total_seconds()
+    hours, delta = divmod(delta, 60*60)
+    minutes = delta // 60
+    return '%s%d:%02d' % (sign, hours, minutes)
+
 
 
 @contextmanager
@@ -59,6 +93,8 @@ def open_files(filenames, *args, **kwargs):
     files = []
     try:
         for filename in filenames:
+            if isinstance(filename, Path):
+                filename = str(filename)
             files.append(codecs.open(filename, *args, **kwargs))
         yield files
     finally:

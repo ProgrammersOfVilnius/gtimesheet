@@ -6,6 +6,7 @@ Setup tests.
 
     >>> import os
     >>> from tempfile import NamedTemporaryFile
+    >>> from .settings import Settings
     >>> f = NamedTemporaryFile(delete=False)
     >>> f.write('''
     ... 2014-03-24 14:15: start
@@ -19,11 +20,14 @@ Setup tests.
     ... 2014-03-31 18:51: project: task 2
     ... ''')
     >>> f.close()
+    >>> cfg = Settings()
+    >>> _ = cfg.set('email', 'me@example.com')
+    >>> _ = cfg.set('name', 'Name')
 
 
 Daily report test.
 
-    >>> reports = ReportsFacade(f.name)
+    >>> reports = ReportsFacade(cfg, f.name)
     >>> print reports.daily('2014-03-31') # doctest: +ELLIPSIS
     To: me@example.com
     ...
@@ -34,18 +38,18 @@ Daily report test.
 
 Weekly report test.
 
-    >>> reports = ReportsFacade(f.name)
+    >>> reports = ReportsFacade(cfg, f.name)
     >>> print reports.weekly('2014/13') # doctest: +ELLIPSIS
     To: me@example.com
     ...
-    Total work done this week: 3:03
+    Total work done this week: 3:59
     ...
     <BLANKLINE>
 
 
 Monthly report test.
 
-    >>> reports = ReportsFacade(f.name)
+    >>> reports = ReportsFacade(cfg, f.name)
     >>> print reports.monthly('2014-03') # doctest: +ELLIPSIS
     To: me@example.com
     ...
@@ -70,11 +74,11 @@ from gtimelog.timelog import TimeWindow
 
 
 class ReportsFacade(object):
-    def __init__(self, filename, virtual_midnight=datetime.time(6, 0)):
+    def __init__(self, cfg, filename, virtual_midnight=datetime.time(6, 0)):
         self.filename = filename
         self.virtual_midnight = virtual_midnight
-        self.email = 'me@example.com'
-        self.who = 'Name'
+        self.email = cfg.email
+        self.who = cfg.name
 
     def window(self, min_dt, max_dt):
         return TimeWindow(self.filename, min_dt, max_dt, self.virtual_midnight)

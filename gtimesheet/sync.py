@@ -101,7 +101,7 @@ def iter_sync(ts1, ts2):
 
             # Sanity checks
             assert last_t1d1 is None or last_t1d1 < t1d1
-            assert t1d1 < t1d2
+            assert t1d1 <= t1d2
 
         if t2:
             t2d1 = t2['date1']
@@ -112,7 +112,7 @@ def iter_sync(ts1, ts2):
 
             # Sanity checks
             assert last_t2d1 is None or last_t2d1 < t2d1
-            assert t2d1 < t2d2
+            assert t2d1 <= t2d2
 
         if t1 is None:
             yield None, t2
@@ -138,11 +138,9 @@ def iter_sync(ts1, ts2):
         elif t1d1 >= t2d2:
             yield None, t2
             t2 = next(ts2, None)
-            t2 = next(ts2, None)
 
         elif t2d1 >= t1d2:
             yield t1, None
-            t1 = next(ts1, None)
             t1 = next(ts1, None)
 
         else:
