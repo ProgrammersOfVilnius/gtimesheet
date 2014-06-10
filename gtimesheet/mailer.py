@@ -1,24 +1,57 @@
 import os
 import codecs
 import smtplib
+import email
 
 from getpass import getpass
 from subprocess import call
 from tempfile import NamedTemporaryFile
+from email.Charset import Charset
+from email.Charset import QP
+from contextlib import contextmanager
 
 from .tracker import schedule
 from .reports import ReportsFacade
+from .utils import is_empty_iterable
 
 
-def sendmail(from_, to, message, username, password, server, port):
+def sendmail(server, from_, to, message):
     if not isinstance(to, list):
         to = [to]
 
-    server = smtplib.SMTP(server, port)
+    charset = Charset('UTF-8')
+    charset.header_encoding = QP
+    charset.body_encoding = QP
+
+    msg = email.message_from_string(message.encode('utf-8'))
+    msg.set_charset(charset)
+
+    server.sendmail(from_, to, msg.as_string())
+
+
+@contextmanager
+def smtp(cfg):
+
+    server = smtplib.SMTP(cfg.smtp_server, cfg.smtp_port)
     server.ehlo()
     server.starttls()
-    server.login(username, password)
-    server.sendmail(from_, to, message.encode('utf-8'))
+
+    if cfg.smtp_ask_password:
+        for i in range(3):
+            password = getpass('Enter SMTP password for %s: ' %
+                               cfg.smtp_username)
+            try:
+                server.login(cfg.smtp_username, password)
+            except smtplib.SMTPAuthenticationError:
+                print
+                print 'Incorrect password, try again...'
+            else:
+                break
+    else:
+        server.login(cfg.smtp_username, cfg.smtp_password)
+
+    yield server
+
     server.close()
 
 
@@ -30,16 +63,8 @@ def print_email_preview(body):
     print
 
 
-def send_reports(cfg, filename, entries, replog, dontsend=False):
-    editor = os.environ.get('EDITOR', 'vi')
-    reports = ReportsFacade(cfg, filename)
-
-    if cfg.smtp_ask_password:
-        password = getpass('Enter SMTP password for %s: ' % cfg.smtp_username)
-    else:
-        password = cfg.smtp_password
-
-    for report, date in schedule(entries, replog):
+def _send_reports(cfg, server, entries, reports, replog):
+    for report, date in entries:
         genreport = getattr(reports, report)
         body = genreport(date)
         print_email_preview(body)
@@ -51,24 +76,24 @@ def send_reports(cfg, filename, entries, replog, dontsend=False):
                 print
                 print 'Sending ...',
                 try:
-                    sendmail(cfg.from_email, cfg.email, body,
-                             cfg.smtp_username, password, cfg.smtp_server,
-                             cfg.smtp_port)
+                    sendmail(server, cfg.from_email, cfg.email, body,
+                             )
                 except Exception as e:
                     print 'FAILED.'
                     print 'Failed to send email: %s' % e
+                    raise
                 else:
                     print '  DONE'
                     replog.write(report, date)
                 break
 
             elif answer == 'e':
-                print 'Opening editor (%s) ...' % editor
+                print 'Opening editor (%s) ...' % cfg.editor
                 f = NamedTemporaryFile('w', suffix='.eml', delete=False)
                 f.write(body.encode('utf-8'))
                 f.close()
                 print f.name
-                retcode = call([editor, f.name])
+                retcode = call([cfg.editor, f.name])
                 if retcode != 0:
                     print 'Editor exited with %d return code.' % retcode
                 else:
@@ -98,3 +123,14 @@ def send_reports(cfg, filename, entries, replog, dontsend=False):
                 print '  q - stop sending report and quit'
                 print '  ? - show all possible choices'
                 print
+
+
+def send_reports(cfg, filename, entries, replog, dontsend=False):
+    reports = ReportsFacade(cfg, filename)
+    entries = schedule(entries, replog)
+    entries = is_empty_iterable(entries)
+    if entries is None:
+        print 'No reports to be sent.'
+    else:
+        with smtp(cfg) as server:
+            _send_reports(cfg, server, entries, reports, replog)

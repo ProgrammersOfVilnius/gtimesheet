@@ -1,3 +1,4 @@
+import os
 import string
 
 from datetime import timedelta
@@ -105,6 +106,7 @@ class Settings(object):
         self.set('email', args['--email'], glog.get('list-email'))
         self.set('from_email', args['--from-email'], gsheet.get('from-email'))
         self.set('name', args['--name'], glog.get('name'))
+        self.set('editor', glog.get('editor'), os.environ.get('EDITOR', 'vi'))
 
         self.set('smtp_username', gsheet.get('smtp-username'), self.from_email)
         self.set('smtp_password', gsheet.get('smtp-password'))

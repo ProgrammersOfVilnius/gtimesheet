@@ -1,5 +1,6 @@
 import gettext
 import codecs
+import itertools
 
 from pathlib import Path
 from contextlib import contextmanager
@@ -100,3 +101,12 @@ def open_files(filenames, *args, **kwargs):
     finally:
         for f in files:
             f.close()
+
+
+def is_empty_iterable(iterable):
+    iterable = iter(iterable)
+    try:
+        first = next(iterable)
+    except StopIteration:
+        return None
+    return itertools.chain([first], iterable)
