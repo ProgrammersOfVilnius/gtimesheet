@@ -82,23 +82,3 @@ def stats_by_day(entries, virtual_midnight=VIRTUAL_MIDNIGHT):
             yield xday, datetime.timedelta()
             xday += datetime.timedelta(days=1)
         yield last, time
-
-
-
-def get_overtime(entries, perday, holidays):
-    totaltime = datetime.timedelta()
-    worktime = datetime.timedelta()
-    overtime = datetime.timedelta()
-    for date, time in stats_by_day(entries):
-        totaltime += perday
-        worktime += time
-        if holidays.is_holiday(date):
-            overtime += time
-            continue
-
-        if time > perday:
-            overtime += time - perday
-        else:
-            overtime -= perday - time
-
-    return totaltime, worktime, overtime

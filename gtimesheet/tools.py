@@ -12,6 +12,9 @@ Usage:
   gtimesheet overtime [--config=<filename>] [--holidays=<filename>...]
              [--work-hours=<hrs-per-day>] [--timesheet=<filename>]
              [--timelog=<filename>]
+  gtimesheet overtime-graph [--config=<filename>] [--holidays=<filename>...]
+             [--work-hours=<hrs-per-day>] [--timesheet=<filename>]
+             [--timelog=<filename>]
   gtimesheet (-h | --help)
   gtimesheet --version
 
@@ -50,7 +53,8 @@ from .timelog import timesheets_to_timelog
 from .timelog import timelog_file
 from .mailer import send_reports
 from .stats import stats_by_day
-from .stats import get_overtime
+from .overtime import get_overtime
+from .overtime import overtime_graph
 from .holidays import Holidays
 from .utils import format_timedelta
 from .utils import format_hours
@@ -123,6 +127,14 @@ def gtimesheet():
         print
         print 'Overtime in fulltime working days (%s h/day):' % h_total
         print '  %s' % format_timedelta(overtime, timedelta(hours=h_total))
+
+    elif args['overtime-graph']:
+        with open_files(cfg.holidays) as files:
+            holidays = Holidays(files)
+        h_total = cfg.hours
+        h_perday = cfg.part_time
+        entries = [entry for source, entry in entries]
+        overtime_graph(entries, h_perday, holidays)
 
     elif cfg.dry_run:
         spt = lambda o: datetime.datetime.strptime(o, '%Y-%m-%d %H:%M')
