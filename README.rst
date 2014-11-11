@@ -19,7 +19,7 @@ Install
 
     pip install -e git+https://github.com/ProgrammersOfVilnius/gtimesheet.git#egg=gtimesheet
 
-Setup your `~/.gtimelog/gtimelogrc`::
+Setup your ``~/.gtimelog/gtimelogrc``::
 
     [gtimelog]
     ...
@@ -38,7 +38,7 @@ Setup your `~/.gtimelog/gtimelogrc`::
     smtp-ask-password = true
 
 If you already use gtimelog_, for the first time, fill
-`~/.gtimelog/sentreports.log` with this command::
+``~/.gtimelog/sentreports.log`` with this command::
 
     gtimesheet send --fake
 
@@ -57,7 +57,7 @@ Using Timesheet
 ---------------
 
 In order to use Timesheet_, you need to specify path to Timesheet's SQLite
-database using `timesheet-db` parameter in `~/.gtimelog/gtimelogrc`. Timesheet_
+database using ``timesheet-db`` parameter in ``~/.gtimelog/gtimelogrc``. Timesheet_
 allows to export all data to SQLite format.
 
 It is up to you, how you synchronize this database file between you mobile
