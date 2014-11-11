@@ -3,9 +3,12 @@ An add-on to gtimelog_.
 Features
 ========
 
-- Can remember already sent time logs.
+- Can remember already sent daily, weekly and monthly time reports.
 
-- Can send all not yet sent time logs with one command (interactively)
+- Has integrated SMTP client for sending mails.
+
+- Can send all not yet sent time logs with one command (interactively). Allows
+  to edit report before sending, using your favorite text editor.
 
 - Can track overtime by specified working hours, with holiday support.
 
@@ -15,7 +18,7 @@ Features
 Install
 =======
 
-::
+Currently the only available options is to grab it from git repo::
 
     pip install -e git+https://github.com/ProgrammersOfVilnius/gtimesheet.git#egg=gtimesheet
 
@@ -37,8 +40,9 @@ Setup your ``~/.gtimelog/gtimelogrc``::
     smtp-port = 587
     smtp-ask-password = true
 
-If you already use gtimelog_, for the first time, fill
-``~/.gtimelog/sentreports.log`` with this command::
+If you where using gtimelog_ before, for the first time, flag all previous
+reports as already sent (information will be added to
+``~/.gtimelog/sentreports.log`` file)::
 
     gtimesheet send --fake
 
