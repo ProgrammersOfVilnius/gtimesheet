@@ -5,6 +5,7 @@ implementation.
 Setup tests.
 
     >>> import os
+    >>> import StringIO as io
     >>> from tempfile import NamedTemporaryFile
     >>> from .settings import Settings
     >>> f = NamedTemporaryFile(delete=False)
@@ -41,6 +42,7 @@ Weekly report test.
     >>> reports = ReportsFacade(cfg, f.name)
     >>> print reports.weekly('2014/13') # doctest: +ELLIPSIS
     To: me@example.com
+    Subject: Weekly report for Name (week 13)
     ...
     Total work done this week: 3:59
     ...
@@ -62,10 +64,26 @@ Tear down tests.
 
     >>> os.unlink(f.name)
 
+Test weekly report issue on first week of the year, caused by:
+
+    >>> data = io.StringIO('''
+    ... 2016-01-04 09:00: start **
+    ... 2016-01-04 09:14: gtimelog: write some tests
+    ... 2016-01-04 09:10: gtimelog: whoops clock got all confused
+    ... 2016-01-04 09:10: gtimelog: so this will need to be fixed
+    ... ''')
+    >>> reports = ReportsFacade(cfg, data)
+    >>> print reports.weekly('2016/01')
+    To: me@example.com
+    Subject: Weekly report for Name (week 01)
+    ...
+    <BLANKLINE>
+
 """
 
 import arrow
 import datetime
+import isoweek
 
 from StringIO import StringIO
 
@@ -74,6 +92,7 @@ from gtimelog.timelog import TimeWindow
 
 
 class ReportsFacade(object):
+
     def __init__(self, cfg, filename, virtual_midnight=datetime.time(6, 0)):
         self.filename = filename
         self.virtual_midnight = virtual_midnight
@@ -94,12 +113,11 @@ class ReportsFacade(object):
         oneday = datetime.timedelta(days=1)
         day = arrow.get(day).floor('day').naive
         day = datetime.datetime.combine(day, self.virtual_midnight)
-        window = self.window(day, day+oneday)
+        window = self.window(day, day + oneday)
         return self.report('daily_report', window)
 
     def weekly(self, week):
-        day = (datetime.datetime.strptime('%s/1' % week, '%Y/%W/%w') -
-               datetime.timedelta(days=7))
+        day = isoweek.Week(*map(int, week.split('/', 2))).monday()
         day = datetime.datetime.combine(day, self.virtual_midnight)
         day = arrow.get(day)
         window = self.window(day.naive, day.replace(weeks=+1).naive)

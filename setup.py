@@ -62,7 +62,7 @@ setup(
     # project is installed.
     install_requires = [
         'gtimelog', 'dataset', 'docopt', 'pathlib', 'arrow',
-        'matplotlib',
+        'matplotlib', 'isoweek',
     ],
 
     # If there are data files included in your packages that need to be
