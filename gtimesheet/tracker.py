@@ -6,17 +6,13 @@ from pathlib import Path
 from .constants import VIRTUAL_MIDNIGHT
 
 
-def woty(d):
-    """woty - week of the year"""
-    return d.isocalendar()[1]
-
-
 def schedule(entries, replog=None, virtual_midnight=VIRTUAL_MIDNIGHT,
              now=None):
     """Generates reports shedule.
 
     Setup tests.
 
+        >>> from StringIO import StringIO
         >>> from pprint import pprint as pp
         >>> now = datetime.datetime(2014, 3, 31, 9)
 
@@ -52,7 +48,6 @@ def schedule(entries, replog=None, virtual_midnight=VIRTUAL_MIDNIGHT,
 
     One day from previous month.
 
-        >>> from StringIO import StringIO
         >>> replog = ReportsLog(log=StringIO(), now=now)
         >>> entries = [
         ...     {'date1': '2014-02-03 01:01'},
@@ -62,11 +57,45 @@ def schedule(entries, replog=None, virtual_midnight=VIRTUAL_MIDNIGHT,
         [('daily', '2014-02-02'), ('weekly', '2014/05'),
          ('monthly', '2014-02')]
 
+    Last week of year:
+
+        >>> now = datetime.datetime(2016, 1, 4, 9, 30)
+        >>> replog = ReportsLog(log=StringIO(), now=now)
+        >>> entries = [
+        ...     {'date1': '2015-12-31 09:00'},
+        ...     {'date1': '2016-01-01 09:00'},
+        ... ]
+        >>> pp(list(schedule(entries, replog, now=now)))
+        ... # doctest: +NORMALIZE_WHITESPACE
+        [('daily', '2015-12-31'),
+         ('monthly', '2015-12'),
+         ('daily', '2016-01-01'),
+         ('weekly', '2015/53')]
+
+        >>> now = datetime.datetime(2016, 1, 11, 9, 30)
+        >>> replog = ReportsLog(log=StringIO(), now=now)
+        >>> entries = [
+        ...     {'date1': '2016-01-04 09:00'},
+        ...     {'date1': '2016-01-05 09:00'},
+        ...     {'date1': '2016-01-06 09:00'},
+        ...     {'date1': '2016-01-07 09:00'},
+        ...     {'date1': '2016-01-08 09:00'},
+        ... ]
+        >>> pp(list(schedule(entries, replog, now=now)))
+        ... # doctest: +NORMALIZE_WHITESPACE
+        [('daily', '2016-01-04'),
+         ('daily', '2016-01-05'),
+         ('daily', '2016-01-06'),
+         ('daily', '2016-01-07'),
+         ('daily', '2016-01-08'),
+         ('weekly', '2016/01')]
+
+
     """
     now = now or datetime.datetime.now()
     replog = replog or ReportsLog(now=now)
     now = arrow.get(now).floor('day').naive
-    now_week = '%d/%02d' % (now.year, woty(now))
+    now_week = '%d/%02d' % tuple(now.isocalendar()[:2])
     now_month = now.strftime('%Y-%m')
     last_month = last_week = None
 
@@ -83,7 +112,7 @@ def schedule(entries, replog=None, virtual_midnight=VIRTUAL_MIDNIGHT,
         else:
             day = day.floor('day').replace(days=-1).naive
 
-        week = '%d/%02d' % (day.year, woty(day))
+        week = '%d/%02d' % tuple(day.isocalendar()[:2])
         if can_yield(last_week, week, now_week):
             yield replog.add('weekly', last_week)
         last_week = week
@@ -96,7 +125,6 @@ def schedule(entries, replog=None, virtual_midnight=VIRTUAL_MIDNIGHT,
         f_day = day.strftime('%Y-%m-%d')
         if f_day not in replog and now > day:
             yield replog.add('daily', f_day)
-
 
     if can_yield(last_week, None, now_week):
         yield replog.add('weekly', last_week)
