@@ -56,7 +56,9 @@ def overtime_graph(entries, perday, holidays):
         y.append(td_to_hours(overtime))
 
     fig, ax = plt.subplots(1)
-    ax.bar(x, y)
+    ax.plot(x, [0] * len(x), 'k')
+    ax.plot(x, y, 'k')
+    ax.fill_between(x, 0, y)
     ax.fmt_xdata = mdates.DateFormatter('%Y-%m-%d')
     fig.autofmt_xdate()
     plt.grid()
