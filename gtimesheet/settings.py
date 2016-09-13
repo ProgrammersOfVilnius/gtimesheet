@@ -7,6 +7,14 @@ from ConfigParser import RawConfigParser
 from os.path import expanduser
 
 
+def resolve_path_if_exists(path):
+    path = Path(expanduser(path))
+    if path.exists():
+        return path.resolve()
+    else:
+        return path
+
+
 def resolve_path(path):
     return Path(expanduser(path)).resolve()
 
@@ -58,7 +66,7 @@ class Settings(object):
             args['--timesheet'],
             gsheet.get('timesheet-db'),
             '~/.gtimelog/timesheet.db',
-            apply=resolve_path,
+            apply=resolve_path_if_exists,
         )
 
         self.set('timelog',
