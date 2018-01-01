@@ -12,7 +12,7 @@ def schedule(entries, replog=None, virtual_midnight=VIRTUAL_MIDNIGHT,
 
     Setup tests.
 
-        >>> from StringIO import StringIO
+        >>> from io import StringIO
         >>> from pprint import pprint as pp
         >>> now = datetime.datetime(2014, 3, 31, 9)
 
@@ -136,7 +136,7 @@ def schedule(entries, replog=None, virtual_midnight=VIRTUAL_MIDNIGHT,
 def read_sent_reports(f):
     """Read sent reports log file and retur set of sent reports.
 
-        >>> from StringIO import StringIO
+        >>> from io import StringIO
         >>> sentreports = StringIO('''
         ... 2014-06-04 15:18:59,monthly,2014-05
         ... ''')

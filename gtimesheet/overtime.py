@@ -46,13 +46,13 @@ def overtime_graph(entries, perday, holidays):
             else:
                 overtime -= perday - time
 
-        print '%s: %6s %6s %6s %s' % (
+        print('%s: %6s %6s %6s %s' % (
             date.date(),
             td_to_hours(overtime),
             td_to_hours(time),
             td_to_hours(perday),
             'holiday' if holidays.is_holiday(date) else '',
-        )
+        ))
         y.append(td_to_hours(overtime))
 
     fig, ax = plt.subplots(1)

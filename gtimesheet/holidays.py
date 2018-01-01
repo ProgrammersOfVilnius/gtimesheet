@@ -3,7 +3,7 @@
 Setup test case.
 
     >>> d = datetime.date
-    >>> from StringIO import StringIO
+    >>> from io import StringIO
     >>> holidays_f = StringIO('''
     ... 2014-02-16    event 1
     ... 2014-04-20/2  event 2

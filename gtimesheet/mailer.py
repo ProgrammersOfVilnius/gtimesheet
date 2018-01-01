@@ -6,8 +6,8 @@ import email
 from getpass import getpass
 from subprocess import call
 from tempfile import NamedTemporaryFile
-from email.Charset import Charset
-from email.Charset import QP
+from email.charset import Charset
+from email.charset import QP
 from contextlib import contextmanager
 
 from .tracker import schedule
@@ -23,7 +23,7 @@ def sendmail(server, from_, to, message):
     charset.header_encoding = QP
     charset.body_encoding = QP
 
-    msg = email.message_from_string(message.encode('utf-8'))
+    msg = email.message_from_string(message)
     msg.set_charset(charset)
 
     server.sendmail(from_, to, msg.as_string())
@@ -43,8 +43,8 @@ def smtp(cfg):
             try:
                 server.login(cfg.smtp_username, password)
             except smtplib.SMTPAuthenticationError:
-                print
-                print 'Incorrect password, try again...'
+                print()
+                print('Incorrect password, try again...')
             else:
                 break
     else:
@@ -56,11 +56,11 @@ def smtp(cfg):
 
 
 def print_email_preview(body):
-    print
-    print '*'*35 + '8<' + '*'*35
-    print body
-    print '*'*35 + '>8' + '*'*35
-    print
+    print()
+    print('*'*35 + '8<' + '*'*35)
+    print(body)
+    print('*'*35 + '>8' + '*'*35)
+    print()
 
 
 def _send_reports(cfg, server, entries, reports, replog):
@@ -70,32 +70,32 @@ def _send_reports(cfg, server, entries, reports, replog):
         print_email_preview(body)
 
         while True:
-            answer = raw_input('Do you want to send this report? [Yneq?]: ')
+            answer = input('Do you want to send this report? [Yneq?]: ')
             answer = answer.lower()
             if answer == '' or answer == 'y':
-                print
-                print 'Sending ...',
+                print()
+                print('Sending ...', end='')
                 try:
                     sendmail(server, cfg.from_email, cfg.email, body,
                              )
                 except Exception as e:
-                    print 'FAILED.'
-                    print 'Failed to send email: %s' % e
+                    print('FAILED.')
+                    print('Failed to send email: %s' % e)
                     raise
                 else:
-                    print '  DONE'
+                    print('  DONE')
                     replog.write(report, date)
                 break
 
             elif answer == 'e':
-                print 'Opening editor (%s) ...' % cfg.editor
+                print('Opening editor (%s) ...' % cfg.editor)
                 f = NamedTemporaryFile('w', suffix='.eml', delete=False)
                 f.write(body.encode('utf-8'))
                 f.close()
-                print f.name
+                print(f.name)
                 retcode = call([cfg.editor, f.name])
                 if retcode != 0:
-                    print 'Editor exited with %d return code.' % retcode
+                    print('Editor exited with %d return code.' % retcode)
                 else:
                     with codecs.open(f.name, encoding='utf-8') as temp:
                         body = temp.read()
@@ -103,7 +103,7 @@ def _send_reports(cfg, server, entries, reports, replog):
                 os.unlink(f.name)
 
             elif answer == 'n':
-                print 'Skipping this report.'
+                print('Skipping this report.')
                 replog.write(report, date)
                 break
 
@@ -112,17 +112,17 @@ def _send_reports(cfg, server, entries, reports, replog):
 
             else:
                 if answer != '?':
-                    print 'ERROR: incorrect choice.'
-                    print
+                    print('ERROR: incorrect choice.')
+                    print()
 
-                print
-                print 'Possible choices are:'
-                print '  y - yes, send this report'
-                print '  n - no, don\'t send this report'
-                print '  e - open this report in editor and send edited version'
-                print '  q - stop sending report and quit'
-                print '  ? - show all possible choices'
-                print
+                print()
+                print('Possible choices are:')
+                print('  y - yes, send this report')
+                print('  n - no, don\'t send this report')
+                print('  e - open this report in editor and send edited version')
+                print('  q - stop sending report and quit')
+                print('  ? - show all possible choices')
+                print()
 
 
 def send_reports(cfg, filename, entries, replog, dontsend=False):
@@ -130,7 +130,7 @@ def send_reports(cfg, filename, entries, replog, dontsend=False):
     entries = schedule(entries, replog)
     entries = is_empty_iterable(entries)
     if entries is None:
-        print 'No reports to be sent.'
+        print('No reports to be sent.')
     else:
         with smtp(cfg) as server:
             _send_reports(cfg, server, entries, reports, replog)

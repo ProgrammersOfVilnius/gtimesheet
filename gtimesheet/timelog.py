@@ -1,6 +1,5 @@
 import os
 import datetime
-import string
 
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
@@ -10,7 +9,7 @@ def read_timelog(f, midnight='06:00'):
     r"""
 
     >>> from pprint import pprint as pp
-    >>> from StringIO import StringIO
+    >>> from io import StringIO
 
     >>> f = StringIO('''
     ... 2014-03-24 14:15: start
@@ -102,20 +101,20 @@ def read_timelog(f, midnight='06:00'):
 
     >>> def print_timelog(entries):
     ...     for entry in entries:
-    ...         print '{date1} -- {date2}: {notes}'.format(**entry)
+    ...         print('{date1} -- {date2}: {notes}'.format(**entry))
     >>> f = StringIO('''
     ... 2014-03-17 12:00: first day.
-    ... 
+    ...
     ... 2014-03-24 14:15: start
     ... 2014-03-24 18:14: p1: t1
-    ... 
+    ...
     ... 2014-03-25 09:40: start
-    ... 
+    ...
     ... 2014-03-31 15:48: start
     ... 2014-03-31 17:10: p2: t1
     ... 2014-03-31 17:38: p2: t2
     ... 2014-03-31 18:51: p2: t3
-    ... 
+    ...
     ... 2014-04-01 13:54: start
     ... 2014-04-01 15:41: p2: t4
     ... 2014-04-01 16:04: tea **
@@ -246,7 +245,7 @@ def timelog_to_timesheet(timelog, projects):
     """
     d1 = timelog['date1']
     d2 = timelog['date2']
-    notes = map(string.strip, timelog['notes'].split(':', 2))
+    notes = list(map(str.strip, timelog['notes'].split(':', 2)))
     client, project, notes = ['']*(3-len(notes)) + notes
     project, project_id = resolvekw(project, projects, default=0)
     return {
@@ -419,7 +418,7 @@ def timesheets_to_timelog(timesheets, midnight='06:00'):
 def timelog_file(entries):
     f = NamedTemporaryFile(delete=False)
     for line in timesheets_to_timelog(entries):
-        f.write(line.encode('utf-8') + '\n')
+        f.write(line.encode('utf-8') + b'\n')
     f.close()
     yield f.name
     os.unlink(f.name)

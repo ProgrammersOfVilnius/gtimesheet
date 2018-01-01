@@ -43,22 +43,22 @@ def format_timedelta(delta, perday=timedelta(hours=24)):
 def format_hours(delta):
     """
 
-        >>> print format_hours(timedelta(days=1))
+        >>> print(format_hours(timedelta(days=1)))
         24:00
 
-        >>> print format_hours(timedelta(days=1, minutes=30))
+        >>> print(format_hours(timedelta(days=1, minutes=30)))
         24:30
 
-        >>> print format_hours(timedelta(days=1, minutes=30, seconds=5))
+        >>> print(format_hours(timedelta(days=1, minutes=30, seconds=5)))
         24:30
 
-        >>> print format_hours(timedelta(seconds=200))
+        >>> print(format_hours(timedelta(seconds=200)))
         0:03
 
-        >>> print format_hours(timedelta(days=10))
+        >>> print(format_hours(timedelta(days=10)))
         240:00
 
-        >>> print format_hours(-timedelta(hours=1, minutes=10))
+        >>> print(format_hours(-timedelta(hours=1, minutes=10)))
         -1:10
 
     """
@@ -84,7 +84,7 @@ def open_files(filenames, *args, **kwargs):
         >>> f2 = NamedTemporaryFile(delete=False)
 
         >>> with open_files([f1.name, f2.name]) as files:
-        ...     print [isinstance(f, file) for f in files]
+        ...     print([isinstance(f, file) for f in files])
         [True, True]
 
         >>> os.unlink(f1.name)

@@ -20,7 +20,8 @@ Install
 
 Currently the only available options is to grab it from git repo::
 
-    pip install -e git+https://github.com/ProgrammersOfVilnius/gtimesheet.git#egg=gtimesheet
+    virtualenv --system-site-packages env
+    env/bin/pip install -e git+https://github.com/ProgrammersOfVilnius/gtimesheet.git#egg=gtimesheet
 
 Setup your ``~/.gtimelog/gtimelogrc``::
 

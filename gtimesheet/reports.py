@@ -5,10 +5,10 @@ implementation.
 Setup tests.
 
     >>> import os
-    >>> import StringIO as io
+    >>> import io
     >>> from tempfile import NamedTemporaryFile
     >>> from .settings import Settings
-    >>> f = NamedTemporaryFile(delete=False)
+    >>> f = NamedTemporaryFile('w', delete=False, encoding='utf-8')
     >>> f.write('''
     ... 2014-03-24 14:15: start
     ... 2014-03-24 18:14: project: task 1
@@ -20,6 +20,7 @@ Setup tests.
     ... 2014-03-31 17:38: project: task 3
     ... 2014-03-31 18:51: project: task 2
     ... ''')
+    211
     >>> f.close()
     >>> cfg = Settings()
     >>> _ = cfg.set('email', 'me@example.com')
@@ -29,7 +30,7 @@ Setup tests.
 Daily report test.
 
     >>> reports = ReportsFacade(cfg, f.name)
-    >>> print reports.daily('2014-03-31') # doctest: +ELLIPSIS
+    >>> print(reports.daily('2014-03-31')) # doctest: +ELLIPSIS
     To: me@example.com
     ...
     Total work done: 3 hours 3 min
@@ -40,7 +41,7 @@ Daily report test.
 Weekly report test.
 
     >>> reports = ReportsFacade(cfg, f.name)
-    >>> print reports.weekly('2014/13') # doctest: +ELLIPSIS
+    >>> print(reports.weekly('2014/13')) # doctest: +ELLIPSIS
     To: me@example.com
     Subject: Weekly report for Name (week 13)
     ...
@@ -52,7 +53,7 @@ Weekly report test.
 Monthly report test.
 
     >>> reports = ReportsFacade(cfg, f.name)
-    >>> print reports.monthly('2014-03') # doctest: +ELLIPSIS
+    >>> print(reports.monthly('2014-03')) # doctest: +ELLIPSIS
     To: me@example.com
     ...
     Total work done this month: 7:02
@@ -73,7 +74,7 @@ Test weekly report issue on first week of the year, caused by:
     ... 2016-01-04 09:10: gtimelog: so this will need to be fixed
     ... ''')
     >>> reports = ReportsFacade(cfg, data)
-    >>> print reports.weekly('2016/01')
+    >>> print(reports.weekly('2016/01'))
     To: me@example.com
     Subject: Weekly report for Name (week 01)
     ...
@@ -85,7 +86,7 @@ import arrow
 import datetime
 import isoweek
 
-from StringIO import StringIO
+from io import StringIO
 
 from gtimelog.timelog import Reports
 from gtimelog.timelog import TimeWindow

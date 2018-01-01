@@ -31,7 +31,7 @@ Options:
   --sent-reports=<filename>
                 Sent reports log file.
   --timesheet=<filename>
-                Timesheet Sqlite3 database file 
+                Timesheet Sqlite3 database file
   --timelog=<filename>
                 gTimeLog timelog.txt file.
   --work-hours=<hrs-per-day>
@@ -108,10 +108,10 @@ def gtimesheet():
                 else:
                     overtime -= perday - time
 
-            print '%s: %8s [%8s] %s' % (
+            print('%s: %8s [%8s] %s' % (
                 date.strftime('%Y-%m-%d'), str(time), format_hours(overtime),
                 holiday
-            )
+            ))
 
     elif args['overtime']:
         with open_files(cfg.holidays) as files:
@@ -120,13 +120,13 @@ def gtimesheet():
         h_perday = cfg.part_time
         entries = [entry for source, entry in entries]
         totaltime, worktime, overtime = get_overtime(entries, h_perday, holidays)
-        print
-        print 'Work time:     %8s' % format_hours(worktime)
-        print 'Total time:    %8s' % format_hours(totaltime)
-        print 'Overtime:      %8s' % format_hours(overtime)
-        print
-        print 'Overtime in fulltime working days (%s h/day):' % h_total
-        print '  %s' % format_timedelta(overtime, timedelta(hours=h_total))
+        print()
+        print('Work time:     %8s' % format_hours(worktime))
+        print('Total time:    %8s' % format_hours(totaltime))
+        print('Overtime:      %8s' % format_hours(overtime))
+        print()
+        print('Overtime in fulltime working days (%s h/day):' % h_total)
+        print('  %s' % format_timedelta(overtime, timedelta(hours=h_total)))
 
     elif args['overtime-graph']:
         with open_files(cfg.holidays) as files:
@@ -142,11 +142,11 @@ def gtimesheet():
         for source, entry in entries:
             delta = spt(entry['date2']) - spt(entry['date1'])
             notes = ': '.join(filter(None, [entry[k] for k in keys]))
-            print u'{source:>9}: {date1} -- {date2} ({delta:>8}): {notes_}'.format(
+            print('{source:>9}: {date1} -- {date2} ({delta:>8}): {notes_}'.format(
                 source=source, notes_=notes, delta=delta, **entry
-            )
+            ))
 
     else:
         entries = (entry for source, entry in entries)
         for line in timesheets_to_timelog(entries):
-            print line
+            print(line)

@@ -1,9 +1,8 @@
 import os
-import string
 
 from datetime import timedelta
 from pathlib import Path
-from ConfigParser import RawConfigParser
+from configparser import RawConfigParser
 from os.path import expanduser
 
 
@@ -42,7 +41,7 @@ def resolve_bool(s):
 
 def resolve_list(*apply):
     def _resolve_list(s):
-        items = map(string.strip, s.split(','))
+        items = map(str.strip, s.split(','))
         for fn in apply:
             items = map(fn, items)
         return items

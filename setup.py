@@ -61,8 +61,13 @@ setup(
     # List run-time dependencies here. These will be installed by pip when your
     # project is installed.
     install_requires = [
-        'gtimelog', 'dataset', 'docopt', 'pathlib', 'arrow',
-        'matplotlib', 'isoweek',
+        'gtimelog',
+        'dataset',
+        'docopt',
+        'pathlib',
+        'arrow',
+        'matplotlib',
+        'isoweek',
     ],
 
     # If there are data files included in your packages that need to be
