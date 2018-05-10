@@ -127,6 +127,9 @@ def gtimesheet():
         print()
         print('Overtime in fulltime working days (%s h/day):' % h_total)
         print('  %s' % format_timedelta(overtime, timedelta(hours=h_total)))
+        print()
+        print('Overtime in fulltime working days (%s h/day):' % (h_perday.total_seconds() / 3600))
+        print('  %s' % format_timedelta(overtime, h_perday))
 
     elif args['overtime-graph']:
         with open_files(cfg.holidays) as files:
