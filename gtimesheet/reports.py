@@ -89,6 +89,7 @@ import isoweek
 from io import StringIO
 
 from gtimelog.timelog import Reports
+from gtimelog.timelog import TimeLog
 from gtimelog.timelog import TimeWindow
 
 
@@ -101,7 +102,8 @@ class ReportsFacade(object):
         self.who = cfg.name
 
     def window(self, min_dt, max_dt):
-        return TimeWindow(self.filename, min_dt, max_dt, self.virtual_midnight)
+        tl = TimeLog(self.filename, self.virtual_midnight)
+        return TimeWindow(tl, min_dt, max_dt, )
 
     def report(self, method, window):
         output = StringIO()
