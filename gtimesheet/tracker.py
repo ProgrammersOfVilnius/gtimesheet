@@ -149,7 +149,7 @@ def read_sent_reports(f):
     for line in f:
         line = line.strip()
         if line:
-            created, report, date = line.strip().split(',')
+            created, report, date = line.strip().split(',')[:3]
             reports.add(date)
     return reports
 
