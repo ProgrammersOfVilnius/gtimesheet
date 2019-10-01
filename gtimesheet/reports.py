@@ -123,12 +123,12 @@ class ReportsFacade(object):
         day = isoweek.Week(*map(int, week.split('/', 2))).monday()
         day = datetime.datetime.combine(day, self.virtual_midnight)
         day = arrow.get(day)
-        window = self.window(day.naive, day.replace(weeks=+1).naive)
+        window = self.window(day.naive, day.shift(weeks=+1).naive)
         return self.report('weekly_report_categorized', window)
 
     def monthly(self, month):
         day = datetime.datetime.strptime(month, '%Y-%m')
         day = datetime.datetime.combine(day, self.virtual_midnight)
         day = arrow.get(day)
-        window = self.window(day.naive, day.replace(months=+1).naive)
+        window = self.window(day.naive, day.shift(months=+1).naive)
         return self.report('monthly_report_categorized', window)
