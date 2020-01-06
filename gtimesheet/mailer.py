@@ -126,7 +126,7 @@ def _send_reports(cfg, server, entries, reports, replog):
 
 
 def send_reports(cfg, filename, entries, replog, dontsend=False):
-    reports = ReportsFacade(cfg, filename)
+    reports = ReportsFacade(cfg, filename, cfg.virtual_midnight)
     entries = schedule(entries, replog)
     entries = is_empty_iterable(entries)
     if entries is None:

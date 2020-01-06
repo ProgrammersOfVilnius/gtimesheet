@@ -1,4 +1,5 @@
 import os
+import datetime
 
 from datetime import timedelta
 from pathlib import Path
@@ -24,12 +25,19 @@ def resolve_float(s):
     else:
         return float(s)
 
+
 def resolve_hours(s):
     s = resolve_float(s)
     if s is None:
         return None
     else:
         return timedelta(hours=s)
+
+
+def resolve_time(s):
+    h, m = map(str.strip, s.split(':', 1))
+    h, m = map(int, (h, m))
+    return datetime.time(h, m)
 
 
 def resolve_bool(s):
@@ -87,6 +95,12 @@ class Settings(object):
             gsheet.get('holidays'),
             '~/.gtimelog/holidays.cfg',
             apply=resolve_list(resolve_path),
+        )
+
+        self.set('virtual_midnight',
+            glog.get('virtual_midnight'),
+            datetime.time(3, 0),
+            apply=resolve_time,
         )
 
         if args['--work-hours']:
