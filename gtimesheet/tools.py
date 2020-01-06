@@ -80,13 +80,18 @@ def gtimesheet():
 
     db = dataset.connect('sqlite:///%s' % cfg.timesheet)
 
-    entries = sync(db, str(cfg.timelog))
+    midnight = '%02d:%02d' % (
+        cfg.virtual_midnight.hour,
+        cfg.virtual_midnight.minute,
+    )
+
+    entries = sync(db, str(cfg.timelog), midnight)
     entries = sync_to_timesheet(db, entries)
 
     if args['send']:
         entries = [entry for source, entry in entries]
         reports = get_sent_reports(cfg.sent_reports)
-        with timelog_file(entries) as filename, _replog(cfg) as log:
+        with timelog_file(entries, midnight) as filename, _replog(cfg) as log:
             replog = ReportsLog(reports, log)
             dontsend = cfg.fake or cfg.dry_run
             send_reports(cfg, filename, entries, replog, dontsend)
@@ -151,5 +156,5 @@ def gtimesheet():
 
     else:
         entries = (entry for source, entry in entries)
-        for line in timesheets_to_timelog(entries):
+        for line in timesheets_to_timelog(entries, midnight=midnight):
             print(line)

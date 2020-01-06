@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
 
 
-def read_timelog(f, midnight='06:00'):
+def read_timelog(f, midnight):
     r"""
 
     >>> from pprint import pprint as pp
@@ -265,7 +265,7 @@ def timelog_to_timesheet(timelog, projects):
     }
 
 
-def timesheets_to_timelog(timesheets, midnight='06:00'):
+def timesheets_to_timelog(timesheets, midnight):
     """Convert list of timesheet records to timelog.txt format.
 
     This function yields timelog line one be one.
@@ -415,9 +415,9 @@ def timesheets_to_timelog(timesheets, midnight='06:00'):
 
 
 @contextmanager
-def timelog_file(entries):
+def timelog_file(entries, midnight):
     f = NamedTemporaryFile(delete=False)
-    for line in timesheets_to_timelog(entries):
+    for line in timesheets_to_timelog(entries, midnight):
         f.write(line.encode('utf-8') + b'\n')
     f.close()
     yield f.name

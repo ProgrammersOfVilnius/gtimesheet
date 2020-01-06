@@ -110,7 +110,7 @@ def schedule(entries, replog=None, virtual_midnight=VIRTUAL_MIDNIGHT,
         if day.naive.time() > virtual_midnight:
             day = day.floor('day').naive
         else:
-            day = day.floor('day').replace(days=-1).naive
+            day = day.floor('day').shift(days=-1).naive
 
         week = '%d/%02d' % tuple(day.isocalendar()[:2])
         if can_yield(last_week, week, now_week):

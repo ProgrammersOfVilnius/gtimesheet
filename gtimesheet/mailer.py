@@ -75,9 +75,11 @@ def _send_reports(cfg, server, entries, reports, replog):
             if answer == '' or answer == 'y':
                 print()
                 print('Sending ...', end='')
+                if cfg.dry_run:
+                    print('  DONE (dry-run)')
+                    break
                 try:
-                    sendmail(server, cfg.from_email, cfg.email, body,
-                             )
+                    sendmail(server, cfg.from_email, cfg.email, body)
                 except Exception as e:
                     print('FAILED.')
                     print('Failed to send email: %s' % e)
@@ -132,5 +134,9 @@ def send_reports(cfg, filename, entries, replog, dontsend=False):
     if entries is None:
         print('No reports to be sent.')
     else:
-        with smtp(cfg) as server:
+        if cfg.dry_run:
+            server = None
             _send_reports(cfg, server, entries, reports, replog)
+        else:
+            with smtp(cfg) as server:
+                _send_reports(cfg, server, entries, reports, replog)

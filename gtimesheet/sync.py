@@ -80,12 +80,12 @@ def iter_sync(ts1, ts2):
             )
 
 
-def sync(timesheet_db, timelog_path):
+def sync(timesheet_db, timelog_path, midnight):
     """Yields merged tuples of ordered timesheet and timelog files."""
 
     with codecs.open(timelog_path, 'r', encoding='utf-8') as f:
         ts1 = timesheet_db['times'].find(order_by=['date1'])
-        ts2 = read_timelog(f)
+        ts2 = read_timelog(f, midnight)
         for timesheet, timelog in iter_sync(ts1, ts2):
             yield timesheet, timelog
 
